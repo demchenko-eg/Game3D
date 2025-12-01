@@ -4,23 +4,28 @@ import java.awt.event.KeyEvent;
 import Input.Controller;
 
 public class Game {
-	public int time;
-	public Controller controls;
-	
-	public Game() {
-		controls = new Controller();
-	}
-	
-	public void tick(boolean[] key) {
-		time++;
-		boolean forward = key[KeyEvent.VK_W];
-		boolean back = key[KeyEvent.VK_S];
-		boolean left = key[KeyEvent.VK_A];
-		boolean right = key[KeyEvent.VK_D];
-		boolean jump = key[KeyEvent.VK_SPACE];
-		boolean crouch = key[KeyEvent.VK_CONTROL];
-		boolean run = key[KeyEvent.VK_SHIFT];
-		
-		controls.tick(forward, back, left, right, jump, crouch, run);
-	}
+    public int time;
+    public Controller controls;
+    public Level level;
+
+    public Game() {
+        level = new Level();
+        controls = new Controller();
+
+        controls.x = level.spawnX;
+        controls.z = level.spawnZ;
+    }
+
+    public void tick(boolean[] key) {
+        time++;
+        boolean forward = key[KeyEvent.VK_W];
+        boolean back = key[KeyEvent.VK_S];
+        boolean left = key[KeyEvent.VK_A];
+        boolean right = key[KeyEvent.VK_D];
+        boolean jump = key[KeyEvent.VK_SPACE];
+        boolean crouch = key[KeyEvent.VK_CONTROL];
+        boolean run = key[KeyEvent.VK_SHIFT];
+
+        controls.tick(forward, back, left, right, jump, crouch, run, level);
+    }
 }
