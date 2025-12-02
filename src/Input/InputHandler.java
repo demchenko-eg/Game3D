@@ -9,78 +9,76 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
 public class InputHandler implements KeyListener, FocusListener, MouseListener, MouseMotionListener {
-	
-	public boolean[] key = new boolean[68836];
-	public static int mouseX;
-	public static int mouseY;
 
-	@Override
-	public void mouseDragged(MouseEvent e) {
-		
-	}
+    public boolean[] key = new boolean[68836];
+    public static int mouseX;
+    public static int mouseY;
+    public boolean interact = false; // Права кнопка миші
 
-	@Override
-	public void mouseMoved(MouseEvent e) {
-		mouseX = e.getX();
-		mouseY = e.getY();
-	}
+    @Override
+    public void mouseDragged(MouseEvent e) {
+    }
 
-	@Override
-	public void mouseClicked(MouseEvent e) {
-		
-	}
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        mouseX = e.getX();
+        mouseY = e.getY();
+    }
 
-	@Override
-	public void mouseEntered(MouseEvent e) {
-		
-	}
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
 
-	@Override
-	public void mouseExited(MouseEvent e) {
-		
-	}
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
 
-	@Override
-	public void mousePressed(MouseEvent e) {
-		
-	}
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
 
-	@Override
-	public void mouseReleased(MouseEvent e) {
-		
-	}
+    @Override
+    public void mousePressed(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON3) { // Права кнопка
+            interact = true;
+        }
+    }
 
-	@Override
-	public void focusGained(FocusEvent e) {
-		
-	}
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON3) {
+            interact = false;
+        }
+    }
 
-	@Override
-	public void focusLost(FocusEvent e) {
-		for (int i = 0; i < key.length; i++) {
-			key[i] = false;
-		}
-	}
+    @Override
+    public void focusGained(FocusEvent e) {
+    }
 
-	@Override
-	public void keyPressed(KeyEvent e) {
-		int keyCode = e.getKeyCode();
-		if(keyCode > 0 && keyCode < key.length) {
-			key[keyCode] = true;
-		}
-	}
+    @Override
+    public void focusLost(FocusEvent e) {
+        for (int i = 0; i < key.length; i++) {
+            key[i] = false;
+        }
+    }
 
-	@Override
-	public void keyReleased(KeyEvent e) {
-		int keyCode = e.getKeyCode();
-		if (keyCode > 0 && keyCode < key.length) {
-			key[keyCode] = false;
-		}
-	}
+    @Override
+    public void keyPressed(KeyEvent e) {
+        int keyCode = e.getKeyCode();
+        if(keyCode > 0 && keyCode < key.length) {
+            key[keyCode] = true;
+        }
+    }
 
-	@Override
-	public void keyTyped(KeyEvent e) {
-		
-	}
-	
+    @Override
+    public void keyReleased(KeyEvent e) {
+        int keyCode = e.getKeyCode();
+        if (keyCode > 0 && keyCode < key.length) {
+            key[keyCode] = false;
+        }
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+    }
 }

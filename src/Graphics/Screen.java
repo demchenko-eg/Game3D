@@ -1,8 +1,6 @@
 package Graphics;
 
-import java.util.Random;
 import Index.Game;
-import Index.Level;
 
 public class Screen extends Render {
 

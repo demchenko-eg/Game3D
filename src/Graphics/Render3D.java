@@ -2,12 +2,14 @@ package Graphics;
 
 import Index.Game;
 import Index.Level;
+import Index.Enemy;
+import Index.Item;
 import Input.Controller;
 
 public class Render3D extends Render {
 
     public double[] zBuffer;
-    private double renderDistance = 10000;
+    private double renderDistance = 15000;
 
     public Render3D(int width, int height) {
         super(width, height);
@@ -27,7 +29,6 @@ public class Render3D extends Render {
         double forward = game.controls.z;
         double right = game.controls.x;
         double up = game.controls.y;
-        double walking = 0;
 
         double rotation = game.controls.rotation;
 
@@ -40,15 +41,8 @@ public class Render3D extends Render {
                 double ceiling = (y - (height / 2.0 + game.controls.rotationPitch)) / height;
 
                 double z = (floorPosition + up) / ceiling;
-                if (Controller.walk) {
-                    z = (floorPosition + up + walking) / ceiling;
-                }
-
                 if (ceiling < 0) {
                     z = (8.0 - up) / -ceiling;
-                    if (Controller.walk) {
-                        z = (8.0 - up - walking) / -ceiling;
-                    }
                 }
 
                 double xx = right + rayDirX * z;
@@ -112,7 +106,7 @@ public class Render3D extends Render {
                 sideDistZ = (mapZ + 1.0 - zPos) * deltaDistZ;
             }
 
-            int maxDepth = 100;
+            int maxDepth = 300;
             int depthCount = 0;
 
             while (!hit && depthCount < maxDepth) {
@@ -125,58 +119,204 @@ public class Render3D extends Render {
                     mapZ += stepZ;
                     side = 1;
                 }
-
                 wallType = level.getTile(mapX, mapZ);
                 if (wallType > 0) hit = true;
-
                 depthCount++;
             }
 
-            if (hit) {
-                if (side == 0) perpWallDist = (mapX - xPos + (1 - stepX) / 2) / rayDirX;
-                else           perpWallDist = (mapZ - zPos + (1 - stepZ) / 2) / rayDirZ;
+            if (!hit) continue;
 
-                int lineHeight = (int) ((height * 16) / perpWallDist);
+            if (side == 0) perpWallDist = (mapX - xPos + (1 - stepX) / 2) / rayDirX;
+            else           perpWallDist = (mapZ - zPos + (1 - stepZ) / 2) / rayDirZ;
 
-                int pitch = (int) game.controls.rotationPitch;
-                int jumpOffset = (int) (game.controls.y * 20);
+            if (perpWallDist > 200) continue;
 
-                int drawStart = -lineHeight / 2 + height / 2 + pitch + jumpOffset;
-                if (drawStart < 0) drawStart = 0;
+            int lineHeight = (int) ((height * 16) / perpWallDist);
+            int pitch = (int) game.controls.rotationPitch;
+            int jumpOffset = (int) (game.controls.y * 20);
 
-                int drawEnd = lineHeight / 2 + height / 2 + pitch + jumpOffset;
-                if (drawEnd >= height) drawEnd = height - 1;
+            int drawStart = -lineHeight / 2 + height / 2 + pitch + jumpOffset;
+            if (drawStart < 0) drawStart = 0;
+            int drawEnd = lineHeight / 2 + height / 2 + pitch + jumpOffset;
+            if (drawEnd >= height) drawEnd = height - 1;
 
-                double wallX;
-                if (side == 0) {
-                    wallX = zPos + perpWallDist * rayDirZ;
-                } else {
-                    wallX = xPos + perpWallDist * rayDirX;
+            double wallX;
+            if (side == 0) wallX = zPos + perpWallDist * rayDirZ;
+            else           wallX = xPos + perpWallDist * rayDirX;
+            wallX -= Math.floor(wallX);
+
+            Render textureToUse = Texture.wall;
+            if (wallType == 2) textureToUse = Texture.grate;
+
+            int texX = (int)(wallX * textureToUse.width);
+            if(side == 0 && rayDirX > 0) texX = textureToUse.width - texX - 1;
+            if(side == 1 && rayDirZ < 0) texX = textureToUse.width - texX - 1;
+
+            int texWidth = textureToUse.width;
+            texX = texX & (texWidth - 1);
+
+            for (int y = drawStart; y < drawEnd; y++) {
+                if (y >= 0 && y < height) {
+                    long d = (long)(y - pitch - jumpOffset) * 256 - height * 128 + lineHeight * 128;
+                    int texY = (int)((d * texWidth) / lineHeight) / 256;
+
+                    if (texY < 0) texY = 0;
+                    if (texY >= texWidth) texY = texWidth - 1;
+
+                    int color = textureToUse.pixels[texX + texY * texWidth];
+                    pixels[x + y * width] = color;
+                    zBuffer[x + y * width] = perpWallDist;
                 }
-                wallX -= Math.floor(wallX);
+            }
 
-                Render textureToUse = Texture.wall;
-                if (wallType == 2) {
-                    textureToUse = Texture.grate;
+            double closestEntityDist = perpWallDist;
+
+            double enemyDist = Double.MAX_VALUE;
+            double enemyHitX = 0;
+            int enemyFace = 0;
+            boolean hitEnemy = false;
+
+            double enemyRadius = 0.7;
+
+            for (Enemy e : level.enemies) {
+                double minX = e.x - enemyRadius; double maxX = e.x + enemyRadius;
+                double minZ = e.z - enemyRadius; double maxZ = e.z + enemyRadius;
+
+                double t1 = (minX - xPos) / rayDirX;
+                double t2 = (maxX - xPos) / rayDirX;
+                double t3 = (minZ - zPos) / rayDirZ;
+                double t4 = (maxZ - zPos) / rayDirZ;
+
+                double tmin = Math.max(Math.min(t1, t2), Math.min(t3, t4));
+                double tmax = Math.min(Math.max(t1, t2), Math.max(t3, t4));
+
+                if (tmax >= tmin && tmin > 0) {
+                    if (tmin < enemyDist) {
+                        enemyDist = tmin;
+                        hitEnemy = true;
+
+                        double intersectX = xPos + rayDirX * tmin;
+                        double intersectZ = zPos + rayDirZ * tmin;
+
+                        if (Math.abs(intersectX - minX) < 0.01) {
+                            enemyHitX = intersectZ - minZ;
+                            enemyFace = 2;
+                        }
+                        else if (Math.abs(intersectX - maxX) < 0.01) {
+                            enemyHitX = intersectZ - minZ;
+                            enemyFace = 3;
+                        }
+                        else if (Math.abs(intersectZ - minZ) < 0.01) {
+                            enemyHitX = intersectX - minX;
+                            enemyFace = 0;
+                        }
+                        else {
+                            enemyHitX = intersectX - minX;
+                            enemyFace = 1;
+                        }
+                    }
                 }
-                int texWidth = textureToUse.width;
+            }
 
-                int texX = (int)(wallX * texWidth);
-                if(side == 0 && rayDirX > 0) texX = texWidth - texX - 1;
-                if(side == 1 && rayDirZ < 0) texX = texWidth - texX - 1;
+            if (hitEnemy && enemyDist < closestEntityDist) {
+                closestEntityDist = enemyDist;
 
-                for (int y = drawStart; y < drawEnd; y++) {
+                int standardWallHeight = (int) ((height * 16) / enemyDist);
+                int cubeHeight = Math.max(1, standardWallHeight / 4);
+
+                int screenCenterY = height / 2 + pitch + jumpOffset;
+
+                int eStart = screenCenterY - (cubeHeight / 2);
+                int eEnd = screenCenterY + (cubeHeight / 2);
+
+                int drawStartClamped = Math.max(0, eStart);
+                int drawEndClamped = Math.min(height - 1, eEnd);
+
+                Render eTex = Texture.enemyFront;
+                if (enemyFace == 1) eTex = Texture.enemyBack;
+                if (enemyFace == 2) eTex = Texture.enemyLeft;
+                if (enemyFace == 3) eTex = Texture.enemyRight;
+
+                int eTexX = (int)((enemyHitX / (2.0 * enemyRadius)) * eTex.width) & (eTex.width - 1);
+
+                for (int y = drawStartClamped; y < drawEndClamped; y++) {
+                    int texY = ((y - eStart) * eTex.height) / cubeHeight;
+                    if (texY < 0) texY = 0; if (texY >= eTex.height) texY = eTex.height - 1;
+
+                    int col = eTex.pixels[eTexX + texY * eTex.width];
+
+                    if ((col & 0xFF000000) != 0) {
+                        pixels[x + y * width] = col;
+                        zBuffer[x + y * width] = enemyDist;
+                    }
+                }
+            }
+
+            double itemDist = Double.MAX_VALUE;
+            double itemHitX = 0;
+            int itemSide = 0;
+            boolean hitItem = false;
+
+            double itemRadius = 0.3;
+
+            for (Item item : level.items) {
+                double minX = item.x - itemRadius; double maxX = item.x + itemRadius;
+                double minZ = item.z - itemRadius; double maxZ = item.z + itemRadius;
+
+                double t1 = (minX - xPos) / rayDirX;
+                double t2 = (maxX - xPos) / rayDirX;
+                double t3 = (minZ - zPos) / rayDirZ;
+                double t4 = (maxZ - zPos) / rayDirZ;
+
+                double tmin = Math.max(Math.min(t1, t2), Math.min(t3, t4));
+                double tmax = Math.min(Math.max(t1, t2), Math.max(t3, t4));
+
+                if (tmax >= tmin && tmin > 0) {
+                    if (tmin < itemDist) {
+                        itemDist = tmin;
+                        hitItem = true;
+
+                        double intersectX = xPos + rayDirX * tmin;
+                        double intersectZ = zPos + rayDirZ * tmin;
+
+                        if (Math.abs(intersectX - minX) < 0.01) { itemHitX = intersectZ - minZ; itemSide = 0; }
+                        else if (Math.abs(intersectX - maxX) < 0.01) { itemHitX = intersectZ - minZ; itemSide = 0; }
+                        else if (Math.abs(intersectZ - minZ) < 0.01) { itemHitX = intersectX - minX; itemSide = 1; }
+                        else { itemHitX = intersectX - minX; itemSide = 1; }
+                    }
+                }
+            }
+
+            if (hitItem && itemDist < closestEntityDist) {
+                int iHeight = (int) ((height * 16) / itemDist);
+                int iEnd = iHeight / 2 + height / 2 + pitch + jumpOffset;
+
+                int cubeHeight = Math.max(1, iHeight / 32);
+                int iStart = iEnd - cubeHeight;
+
+                if (iStart < 0) iStart = 0;
+                if (iEnd >= height) iEnd = height - 1;
+
+                Render iTex = Texture.yellowSquare;
+
+                int iTexX = (int)((itemHitX / (2.0 * itemRadius)) * iTex.width) & (iTex.width - 1);
+
+                for (int y = iStart; y < iEnd; y++) {
                     if (y >= 0 && y < height) {
-                        long d = (long)(y - pitch - jumpOffset) * 256 - height * 128 + lineHeight * 128;
-                        int texY = (int)((d * texWidth) / lineHeight) / 256;
+                        long d = (long)(y - pitch - jumpOffset) * 256 - height * 128 + iHeight * 128;
+                        int texY = (int)((d * iTex.width) / iHeight) / 256;
+                        if (texY < 0) texY = 0; if (texY >= 64) texY = 63;
 
-                        if (texY < 0) texY = 0;
-                        if (texY >= texWidth) texY = texWidth - 1;
+                        int col = iTex.pixels[iTexX + texY * 64];
 
-                        int color = textureToUse.pixels[texX + texY * texWidth];
+                        if (y <= iStart + 1) {
+                            col = 0xFFE6B800;
+                        } else if (itemSide == 1) {
+                            col = (col & 0xFEFEFE) >> 1;
+                        }
 
-                        pixels[x + y * width] = color;
-                        zBuffer[x + y * width] = perpWallDist;
+                        pixels[x + y * width] = col;
+                        zBuffer[x + y * width] = itemDist;
                     }
                 }
             }

@@ -10,21 +10,28 @@ public class Controller {
     public double ya = 0;
     public boolean isJumping = false;
 
+    public boolean isMoving = false;
+    public boolean isCrouching = false;
+
     public static boolean turnLeft = false;
     public static boolean turnRight = false;
     public static boolean walk = false;
 
     public void tick(boolean forward, boolean back, boolean left, boolean right, boolean jump, boolean crouch, boolean run, Level level) {
         double rotationSpeed = 0.0076;
-        double walkSpeed = 0.9;
+
+        double walkSpeed = 0.5;
         double groundLevel = 0;
 
+        isCrouching = crouch;
+        isMoving = forward || back || left || right;
+
         if (crouch) {
-            walkSpeed = 0.45;
+            walkSpeed = 0.2;
             run = false;
             groundLevel = -0.5;
         } else if (run) {
-            walkSpeed = 1.4;
+            walkSpeed = 0.8;
         }
 
         double xMove = 0;
@@ -94,7 +101,7 @@ public class Controller {
     }
 
     private boolean isFree(double xx, double zz, Level level) {
-        double r = 0.2;
+        double r = 0.35;
 
         if (level.getTile((int)(xx - r), (int)(zz - r)) > 0) return false;
         if (level.getTile((int)(xx - r), (int)(zz + r)) > 0) return false;
