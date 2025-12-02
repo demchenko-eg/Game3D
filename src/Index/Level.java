@@ -21,6 +21,7 @@ public class Level {
     public List<Item> items = new ArrayList<>();
 
     public Level(int w, int h, int itemCount, int enemyCount) {
+
         if (w % 2 == 0) w++;
         if (h % 2 == 0) h++;
 
@@ -65,6 +66,7 @@ public class Level {
             map[exitPos][mapHeight-1]=2; map[exitPos+1][mapHeight-1]=2; map[exitPos][mapHeight-2]=0; map[exitPos+1][mapHeight-2]=0;
             exitPixelX = (exitPos + 0.5) * scale; exitPixelZ = (mapHeight - 1) * scale;
         } else {
+
             map[0][exitPos]=2; map[0][exitPos+1]=2; map[1][exitPos]=0; map[1][exitPos+1]=0;
             exitPixelX = 0; exitPixelZ = (exitPos + 0.5) * scale;
         }
@@ -84,6 +86,7 @@ public class Level {
             while (true) {
                 enemyGx = random.nextInt(mapWidth);
                 enemyGz = random.nextInt(mapHeight);
+
                 double dist = Math.sqrt(Math.pow(enemyGx - (spawnX/scale), 2) + Math.pow(enemyGz - (spawnZ/scale), 2));
                 if (map[enemyGx][enemyGz] == 0 && dist > 10) {
                     break;

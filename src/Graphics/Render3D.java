@@ -126,6 +126,7 @@ public class Render3D extends Render {
 
             if (!hit) continue;
 
+
             if (side == 0) perpWallDist = (mapX - xPos + (1 - stepX) / 2) / rayDirX;
             else           perpWallDist = (mapZ - zPos + (1 - stepZ) / 2) / rayDirZ;
 
@@ -144,6 +145,7 @@ public class Render3D extends Render {
             if (side == 0) wallX = zPos + perpWallDist * rayDirZ;
             else           wallX = xPos + perpWallDist * rayDirX;
             wallX -= Math.floor(wallX);
+
 
             Render textureToUse = Texture.wall;
             if (wallType == 2) textureToUse = Texture.grate;
@@ -173,6 +175,7 @@ public class Render3D extends Render {
 
             double enemyDist = Double.MAX_VALUE;
             double enemyHitX = 0;
+
             int enemyFace = 0;
             boolean hitEnemy = false;
 
@@ -181,6 +184,7 @@ public class Render3D extends Render {
             for (Enemy e : level.enemies) {
                 double minX = e.x - enemyRadius; double maxX = e.x + enemyRadius;
                 double minZ = e.z - enemyRadius; double maxZ = e.z + enemyRadius;
+
 
                 double t1 = (minX - xPos) / rayDirX;
                 double t2 = (maxX - xPos) / rayDirX;

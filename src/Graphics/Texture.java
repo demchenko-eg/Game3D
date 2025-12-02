@@ -1,6 +1,7 @@
 package Graphics;
 
 import java.awt.image.BufferedImage;
+import java.util.Random;
 import javax.imageio.ImageIO;
 
 public class Texture {
@@ -27,6 +28,7 @@ public class Texture {
             image.getRGB(0, 0, width, height, result.pixels, 0, width);
             return result;
         } catch(Exception e) {
+
             System.out.println("Error loading: " + fileName);
             Render err = new Render(64, 64);
             for(int i=0; i<64*64; i++) err.pixels[i] = 0xFFFF00FF;
@@ -38,8 +40,10 @@ public class Texture {
         int w = 64;
         int h = 64;
         Render r = new Render(w, h);
+
         for (int i = 0; i < w * h; i++) {
             int val = 150 + new java.util.Random().nextInt(105);
+
             r.pixels[i] = (val << 16) | (val << 8);
         }
         return r;

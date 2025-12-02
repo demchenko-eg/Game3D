@@ -13,7 +13,7 @@ public class InputHandler implements KeyListener, FocusListener, MouseListener, 
     public boolean[] key = new boolean[68836];
     public static int mouseX;
     public static int mouseY;
-    public boolean interact = false; // Права кнопка миші
+    public boolean interact = false;
 
     @Override
     public void mouseDragged(MouseEvent e) {
@@ -39,7 +39,7 @@ public class InputHandler implements KeyListener, FocusListener, MouseListener, 
 
     @Override
     public void mousePressed(MouseEvent e) {
-        if (e.getButton() == MouseEvent.BUTTON3) { // Права кнопка
+        if (e.getButton() == MouseEvent.BUTTON3) {
             interact = true;
         }
     }
